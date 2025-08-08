@@ -3,15 +3,41 @@ const fs = require("fs");
 const { createCanvas, loadImage } = require('canvas');
 const express = require('express');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Enable CORS for n8n integration
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 require('dotenv').config();
 
 // Use environment variable for API key (more secure)
 const API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyAK-9qM4SPrtQnpcd7OdnvYuztFmRU_pRc";
 const genAI = new GoogleGenAI(API_KEY);
+
+// Health check endpoint for Render
+app.get('/', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'FitNosh Instagram Image Generator API',
+    endpoints: {
+      'POST /generate-image': 'Generate Instagram image with meal data',
+      'GET /images': 'List all generated images',
+      'GET /images/:filename': 'View specific image'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
 
 async function addLogoAndLabels(imagePath, meal) {
   try {

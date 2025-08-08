@@ -277,51 +277,22 @@ app.post('/generate-image', async (req, res) => {
     const mealData = req.body;
     const imagePath = await generateMealImage(mealData);
     
-    // Get the correct base URL with multiple fallback methods
-    let baseUrl;
-    const host = req.get('host');
-    const forwardedHost = req.get('x-forwarded-host');
-    const forwardedProto = req.get('x-forwarded-proto');
-    
-    // Debug logging
-    console.log('Host detection debug:', {
-      host,
-      forwardedHost,
-      forwardedProto,
-      originalUrl: req.originalUrl,
-      headers: req.headers
-    });
-    
-    // Priority order for URL determination
-    if (forwardedHost && forwardedProto) {
-      baseUrl = `${forwardedProto}://${forwardedHost}`;
-    } else if (host && host.includes('onrender.com')) {
-      baseUrl = `https://${host}`;
-    } else if (host && host.includes('localhost')) {
-      baseUrl = `http://${host}`;
-    } else {
-      // Hardcode the known Render URL as fallback
-      baseUrl = 'https://n8n-iw8n.onrender.com';
-    }
-    
-    console.log('Final baseUrl determined:', baseUrl);
+    // Simple, reliable URL generation
+    const baseUrl = 'https://n8n-iw8n.onrender.com';
     
     res.json({
       message: 'Image generated successfully',
       imagePath: imagePath,
       imageUrl: `${baseUrl}/images/${imagePath}`,
       imageDisplayUrl: `${baseUrl}/images/${imagePath}`,
-      viewImageDirectly: `Click to view: ${baseUrl}/images/${imagePath}`,
-      // Debug info (remove in production)
-      debug: {
-        detectedHost: host,
-        forwardedHost: forwardedHost,
-        finalBaseUrl: baseUrl
-      }
+      directLink: `${baseUrl}/images/${imagePath}`
     });
   } catch (error) {
     console.error('Error generating image:', error);
-    res.status(500).send('Error generating image');
+    res.status(500).json({ 
+      error: 'Error generating image',
+      details: error.message 
+    });
   }
 });
 

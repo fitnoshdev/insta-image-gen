@@ -1,96 +1,128 @@
-
 {
-    "nodes": [
-      {
-        "parameters": {},
-        "type": "n8n-nodes-base.manualTrigger",
-        "typeVersion": 1,
-        "position": [
-          0,
-          0
-        ],
-        "id": "77f81a0e-7091-49e1-bb68-d77b35411d5b",
-        "name": "When clicking ‘Execute workflow’"
-      },
-      {
-        "parameters": {
-          "documentId": {
-            "__rl": true,
-            "value": "1_WROkpY34hiN-831qZ0723rIBafvjwSolfMCAecsX2E",
-            "mode": "list",
-            "cachedResultName": "fitnosh-mealplanner",
-            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_WROkpY34hiN-831qZ0723rIBafvjwSolfMCAecsX2E/edit?usp=drivesdk"
-          },
-          "sheetName": {
-            "__rl": true,
-            "value": "gid=0",
-            "mode": "list",
-            "cachedResultName": "Sheet1",
-            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_WROkpY34hiN-831qZ0723rIBafvjwSolfMCAecsX2E/edit#gid=0"
-          },
-          "options": {}
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "90140e81-2793-41a3-ba85-771aece081c1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_WROkpY34hiN-831qZ0723rIBafvjwSolfMCAecsX2E",
+          "mode": "list",
+          "cachedResultName": "fitnosh-mealplanner",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_WROkpY34hiN-831qZ0723rIBafvjwSolfMCAecsX2E/edit?usp=drivesdk"
         },
-        "type": "n8n-nodes-base.googleSheets",
-        "typeVersion": 4.6,
-        "position": [
-          208,
-          0
-        ],
-        "id": "e54b42da-a588-47dc-bf36-ecb17c990f68",
-        "name": "Get row(s) in sheet",
-        "credentials": {
-          "googleSheetsOAuth2Api": {
-            "id": "W8xnCGnR3lTHbixM",
-            "name": "Google Sheets account"
-          }
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_WROkpY34hiN-831qZ0723rIBafvjwSolfMCAecsX2E/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1fdb54ff-2178-4604-af10-37667e860c0e",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "E4kPEiIHAcEL0Pku",
+          "name": "Google Sheets account"
         }
-      },
-      {
-        "parameters": {
-          "jsCode": "const day = $input.first().json.day;\nconst breakfast = $input.first().json.breakfast;\nconst snack = $input.first().json.snack;\nconst lunch = $input.first().json.lunch;\n\nconst prompt = `Generate an Instagram-style healthy food image with:\n- Breakfast: ${breakfast}\n- Snack: ${snack}\n- Lunch: ${lunch}\nUse natural lighting, modern aesthetic, and make it vibrant and delicious.`;\n\nreturn [\n  {\n    json: {\n      ...$input.first().json,\n      prompt\n    }\n  }\n];\n"
-        },
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          432,
-          0
-        ],
-        "id": "edc26a6f-fb62-436d-a726-fb06ce5f679b",
-        "name": "Code1"
-      }
-    ],
-    "connections": {
-      "When clicking ‘Execute workflow’": {
-        "main": [
-          [
-            {
-              "node": "Get row(s) in sheet",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Get row(s) in sheet": {
-        "main": [
-          [
-            {
-              "node": "Code1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code1": {
-        "main": [
-          []
-        ]
       }
     },
-    "pinData": {},
-    "meta": {
-      "templateCredsSetupCompleted": true,
-      "instanceId": "77cb61e8ff17ef4d02cc780b84ce311eb8b83f7ee6057d533246834281d1179f"
+    {
+      "parameters": {
+        "jsCode": "const day = $input.first().json.day;\nconst breakfast = $input.first().json.breakfast;\nconst snack = $input.first().json.snack;\nconst lunch = $input.first().json.lunch;\n\nconst prompt = `Generate an Instagram-style healthy food image with:\n- Breakfast: ${breakfast}\n- Snack: ${snack}\n- Lunch: ${lunch}\nUse natural lighting, modern aesthetic, and make it vibrant and delicious.`;\n\nreturn [\n  {\n    json: {\n      ...$input.first().json,\n      prompt\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "f1c6d73a-ac57-40c9-aaac-bfac7d4465e7",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n-iw8n.onrender.com/generate-image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "[\n  {\n    \"Day\": \"Tuesday\",\n    \"Breakfast\": \"Idlt  + Vada\",\n    \"Snack\": \"Mixed Nuts + Dates\",\n    \"Lunch\": \"Millet Roti + payasam\"\n  }\n]\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "d1da1a82-cfed-4c76-b2a8-dee61c439103",
+      "name": "HTTP Request"
     }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "beb4057f6633d178b940a80c5c0c1a35655eab43c58f7c59938d173ca3b81c79"
   }
+}

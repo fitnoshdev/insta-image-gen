@@ -218,6 +218,7 @@ VISUAL STYLE:
 - Each food item clearly visible and beautifully presented
 - ASPECT RATIO: 1:1 (Instagram square format)
 - Square composition optimized for Instagram posts
+- No Borders 
 
 COLORS TO USE:
 - Incorporate vibrant yellow (#FDCF16) accent elements:
@@ -250,8 +251,21 @@ ABSOLUTELY CRITICAL - NO BRANDING IN AI GENERATION:
 - Just clean food photography with plain dark background
 - All branding will be added externally as overlay`;
 
+  // Add randomization to ensure different images each time
+  const randomSeed = Math.floor(Math.random() * 10000);
+  const enhancedContents = contents + `
+
+VARIATION REQUIREMENTS:
+- Generate a unique composition each time
+- Vary the arrangement and styling 
+- Different camera angles and food placement
+- Unique presentation style
+- Random seed: ${randomSeed}
+- Timestamp: ${new Date().toISOString()}`;
+
   console.log("Generating image for:", meal.Day);
-  console.log("Prompt:", contents);
+  console.log("Random seed:", randomSeed);
+  console.log("Prompt:", enhancedContents);
 
   // Set responseModalities to include "Image" so the model can generate an image
   let response;
@@ -262,7 +276,7 @@ ABSOLUTELY CRITICAL - NO BRANDING IN AI GENERATION:
     try {
       response = await genAI.models.generateContent({
         model: "gemini-2.0-flash-preview-image-generation",
-        contents: contents,
+        contents: enhancedContents,
         config: {
           responseModalities: [Modality.TEXT, Modality.IMAGE],
         },

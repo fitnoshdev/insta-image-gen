@@ -92,6 +92,9 @@ async function addLogoAndLabels(imagePath, meal) {
     // Load and overlay the real Street Nosh logo
     try {
       console.log('Loading Street Nosh logo: street_nosh_logo.png');
+      console.log('Current working directory:', process.cwd());
+      console.log('Files in directory:', require('fs').readdirSync('.'));
+      
       const logo = await loadImage('street_nosh_logo.png');
       console.log('Logo loaded successfully:', logo.width, 'x', logo.height);
       
@@ -101,20 +104,12 @@ async function addLogoAndLabels(imagePath, meal) {
       
     } catch (logoError) {
       console.error('Error loading logo file:', logoError.message);
-      console.log('Creating placeholder logo area instead');
+      console.log('Current working directory:', process.cwd());
+      console.log('Files in directory:', require('fs').readdirSync('.'));
+      console.log('Skipping logo - will leave space empty for external logo overlay');
       
-      // Create a placeholder logo area with brand colors
-      ctx.fillStyle = '#FDCF16'; // Yellow brand color
-      ctx.fillRect(logoX, logoY, logoSize, logoSize);
-      
-      // Add "FITNOSH" text as placeholder
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 32px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('FITNOSH', logoX + logoSize/2, logoY + logoSize/2);
-      
-      console.log(`Placeholder logo created at position: ${logoX}, ${logoY} with size: ${logoSize}`);
+      // Don't create any placeholder - leave the space empty as intended
+      // The AI prompt already instructs to leave this space clear for logo placement
     }
     
     // Set up text styling for dish labels
@@ -250,6 +245,8 @@ ABSOLUTELY CRITICAL - NO BRANDING IN AI GENERATION:
 - NO Street Nosh logos or any other brand logos
 - NO decorative text or graphic elements
 - NO company names or brand references
+- NO borders, frames, or decorative elements around the image
+- NO yellow borders or colored frames
 - Just clean food photography with plain dark background
 - All branding will be added externally as overlay`;
 

@@ -168,39 +168,39 @@ async function addLogoAndLabels(imagePath, meal) {
 }
 
 async function generateMealImage(mealData = null) {
-  // Use provided meal data or default data
-  const defaultMealData = [
-    {
-      "row_number": 2,
-      "Day": "Tuesday",
-      "Breakfast": "Smoothie Bowl + Granola",
-      "Snack": "Mixed Nuts + Dates",
-      "Lunch": "Millet Roti + Mixed Veg Curry"
-    }
-  ];
+  // Default meal data
+  const defaultMeal = {
+    "Day": "Tuesday",
+    "Breakfast": "Smoothie Bowl + Granola",
+    "Snack": "Mixed Nuts + Dates",
+    "Lunch": "Millet Roti + Mixed Veg Curry"
+  };
 
-  console.log('Received mealData:', JSON.stringify(mealData, null, 2));
+  let meal = defaultMeal;
   
-  let meals;
-  if (mealData && Array.isArray(mealData) && mealData.length > 0) {
-    meals = mealData;
-  } else if (mealData && !Array.isArray(mealData)) {
-    // If single object is provided, wrap it in array
-    meals = [mealData];
-  } else {
-    meals = defaultMealData;
+  try {
+    // Handle different input formats
+    if (mealData) {
+      if (Array.isArray(mealData) && mealData.length > 0) {
+        meal = mealData[0];
+      } else if (typeof mealData === 'object') {
+        meal = mealData;
+      }
+    }
+    
+    // Ensure all required fields exist with fallbacks
+    meal = {
+      Day: meal.Day || defaultMeal.Day,
+      Breakfast: meal.Breakfast || defaultMeal.Breakfast,
+      Snack: meal.Snack || defaultMeal.Snack,
+      Lunch: meal.Lunch || defaultMeal.Lunch
+    };
+    
+    console.log('Final meal data:', meal);
+  } catch (error) {
+    console.error('Error processing meal data, using defaults:', error);
+    meal = defaultMeal;
   }
-  
-  // Extract the first meal plan and validate it
-  const meal = meals[0];
-  
-  // Validate required fields
-  if (!meal || !meal.Day || !meal.Breakfast || !meal.Snack || !meal.Lunch) {
-    console.error('Invalid meal data structure:', meal);
-    throw new Error('Invalid meal data. Required fields: Day, Breakfast, Snack, Lunch');
-  }
-  
-  console.log('Using meal data:', JSON.stringify(meal, null, 2));
   const contents = `Generate a professional Instagram food photography image:
 
 FOOD COMPOSITION:
@@ -307,28 +307,9 @@ ABSOLUTELY CRITICAL - NO BRANDING IN AI GENERATION:
 
 app.post('/generate-image', async (req, res) => {
   try {
-    console.log('POST /generate-image called');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    console.log('Content-Type:', req.get('Content-Type'));
-    
     const mealData = req.body;
-    
-    // Validate that we have data
-    if (!mealData) {
-      return res.status(400).json({
-        error: 'No meal data provided',
-        expectedFormat: {
-          Day: 'Tuesday',
-          Breakfast: 'Smoothie Bowl + Granola',
-          Snack: 'Mixed Nuts + Dates', 
-          Lunch: 'Millet Roti + Mixed Veg Curry'
-        }
-      });
-    }
-    
     const imagePath = await generateMealImage(mealData);
     
-    // Simple, reliable URL generation
     const baseUrl = 'https://n8n-iw8n.onrender.com';
     
     res.json({
@@ -340,11 +321,9 @@ app.post('/generate-image', async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating image:', error);
-    console.error('Stack trace:', error.stack);
     res.status(500).json({ 
       error: 'Error generating image',
-      details: error.message,
-      receivedData: req.body
+      details: error.message
     });
   }
 });

@@ -101,6 +101,20 @@ async function addLogoAndLabels(imagePath, meal) {
       
     } catch (logoError) {
       console.error('Error loading logo file:', logoError.message);
+      console.log('Creating placeholder logo area instead');
+      
+      // Create a placeholder logo area with brand colors
+      ctx.fillStyle = '#FDCF16'; // Yellow brand color
+      ctx.fillRect(logoX, logoY, logoSize, logoSize);
+      
+      // Add "FITNOSH" text as placeholder
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 32px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('FITNOSH', logoX + logoSize/2, logoY + logoSize/2);
+      
+      console.log(`Placeholder logo created at position: ${logoX}, ${logoY} with size: ${logoSize}`);
     }
     
     // Set up text styling for dish labels

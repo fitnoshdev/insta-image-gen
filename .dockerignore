@@ -6,6 +6,8 @@ npm-debug.log
 README.md
 Dockerfile
 .dockerignore
-*.png
-*.jpg
-*.jpeg
+# Exclude generated images but keep logo
+*-meals.png
+temp-*.png
+# Keep logo file
+!street_nosh_logo.png

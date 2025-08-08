@@ -25,17 +25,50 @@ require('dotenv').config();
 const API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyAK-9qM4SPrtQnpcd7OdnvYuztFmRU_pRc";
 const genAI = new GoogleGenAI(API_KEY);
 
-// Health check endpoint for Render
+// Health check endpoint for n8n and monitoring
 app.get('/', (req, res) => {
   res.json({
-    status: 'OK',
-    message: 'FitNosh Instagram Image Generator API',
+    status: 'healthy',
+    service: 'fitnosh-instagram-generator',
+    version: '1.0.0',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
     endpoints: {
       'POST /generate-image': 'Generate Instagram image with meal data',
       'GET /images': 'List all generated images',
-      'GET /images/:filename': 'View specific image'
+      'GET /images/:filename': 'View specific image',
+      'GET /health': 'Detailed health check'
+    }
+  });
+});
+
+// Detailed health check endpoint for n8n monitoring
+app.get('/health', (req, res) => {
+  const healthCheck = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    service: 'fitnosh-instagram-generator',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'production',
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
     },
-    timestamp: new Date().toISOString()
+    api_key_configured: !!process.env.GOOGLE_API_KEY,
+    logo_file_exists: require('fs').existsSync('./street_nosh_logo.png'),
+    ready: true
+  };
+
+  res.status(200).json(healthCheck);
+});
+
+// Simple ping endpoint for keep-alive
+app.get('/ping', (req, res) => {
+  res.status(200).json({ 
+    status: 'pong', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
 });
 

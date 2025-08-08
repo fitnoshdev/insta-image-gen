@@ -276,10 +276,19 @@ app.post('/generate-image', async (req, res) => {
   try {
     const mealData = req.body;
     const imagePath = await generateMealImage(mealData);
+    
+    // Get the correct base URL (works for both local and deployed)
+    const baseUrl = req.get('host').includes('localhost') 
+      ? `http://${req.get('host')}`
+      : `https://${req.get('host')}`;
+    
     res.json({
       message: 'Image generated successfully',
       imagePath: imagePath,
-      imageUrl: `http://localhost:${port}/images/${imagePath}`
+      imageUrl: `${baseUrl}/images/${imagePath}`,
+      // Add direct image data for n8n display
+      imageDisplayUrl: `${baseUrl}/images/${imagePath}`,
+      viewImageDirectly: `Click to view: ${baseUrl}/images/${imagePath}`
     });
   } catch (error) {
     console.error('Error generating image:', error);
@@ -287,15 +296,23 @@ app.post('/generate-image', async (req, res) => {
   }
 });
 
-// Serve generated images
+// Serve generated images with proper headers for n8n display
 app.get('/images/:filename', (req, res) => {
   const filename = req.params.filename;
   const filepath = `./${filename}`;
   
   if (fs.existsSync(filepath)) {
+    // Set proper headers for image display
+    res.set({
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
     res.sendFile(filepath, { root: __dirname });
   } else {
-    res.status(404).send('Image not found');
+    res.status(404).json({ error: 'Image not found', filename: filename });
   }
 });
 

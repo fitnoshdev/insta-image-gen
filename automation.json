@@ -72,7 +72,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "[\n  {\n    \"Day\": \"Tuesday\",\n    \"Breakfast\": \"Idlt  + Vada\",\n    \"Snack\": \"Mixed Nuts + Dates\",\n    \"Lunch\": \"Millet Roti + payasam\"\n  }\n]\n",
+        "jsonBody": "[\n  {\n    \"Day\": \"sunday\",\n    \"Breakfast\": \"Idly  + Vada\",\n    \"Snack\": \"Mixed Nuts + Dates\",\n    \"Lunch\": \"Millet Roti + payasam\"\n  }\n]\n",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",

@@ -4,7 +4,7 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for canvas
+# Install system dependencies for canvas and fonts
 RUN apk add --no-cache \
     cairo-dev \
     jpeg-dev \
@@ -13,7 +13,11 @@ RUN apk add --no-cache \
     gcc \
     g++ \
     make \
-    python3
+    python3 \
+    fontconfig \
+    ttf-dejavu \
+    ttf-liberation \
+    font-noto
 
 # Copy package files first for better caching
 COPY package*.json ./

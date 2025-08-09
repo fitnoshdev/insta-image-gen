@@ -1,7 +1,9 @@
 const { GoogleGenAI, Modality } = require("@google/genai");
 const fs = require("fs");
-const { createCanvas, loadImage } = require('canvas');
+const { createCanvas, loadImage, registerFont } = require('canvas');
 const express = require('express');
+const path = require('path');
+const crypto = require('crypto');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -20,6 +22,44 @@ app.use((req, res, next) => {
 });
 
 require('dotenv').config();
+
+// Global variable to track font registration status
+let fontRegistered = false;
+
+// Register system fonts for better cross-platform compatibility
+try {
+  // Try to register a system font that works well on both local and server
+  // These are commonly available fonts on most systems
+  const fontPaths = [
+    '/System/Library/Fonts/Arial.ttf', // macOS
+    '/System/Library/Fonts/Helvetica.ttc', // macOS
+    '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', // Linux
+    '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf', // Common Linux
+    '/usr/share/fonts/TTF/arial.ttf', // Some Linux distributions
+    'C:\\Windows\\Fonts\\arial.ttf', // Windows
+    'C:\\Windows\\Fonts\\calibri.ttf', // Windows
+  ];
+  
+  // Use the global fontRegistered variable
+  for (const fontPath of fontPaths) {
+    try {
+      if (fs.existsSync(fontPath)) {
+        registerFont(fontPath, { family: 'BrandFont' });
+        console.log(`Registered font: ${fontPath}`);
+        fontRegistered = true;
+        break;
+      }
+    } catch (err) {
+      console.log(`Failed to register font ${fontPath}:`, err.message);
+    }
+  }
+  
+  if (!fontRegistered) {
+    console.log('No system fonts found, will use canvas default fonts');
+  }
+} catch (error) {
+  console.log('Font registration failed, using default fonts:', error.message);
+}
 
 // Use environment variable for API key (more secure)
 const API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyAK-9qM4SPrtQnpcd7OdnvYuztFmRU_pRc";
@@ -72,14 +112,50 @@ app.get('/ping', (req, res) => {
   });
 });
 
+// Function to clean up old image files (keep only last 10)
+function cleanupOldImages() {
+  try {
+    const imageFiles = fs.readdirSync('.')
+      .filter(file => file.match(/^\w+-meals-\d+-[a-f0-9]+\.png$/)) // Match our new naming pattern
+      .map(file => ({
+        name: file,
+        time: fs.statSync(file).mtime
+      }))
+      .sort((a, b) => b.time - a.time); // Sort by modification time, newest first
+    
+    // Keep only the 10 most recent images, delete the rest
+    if (imageFiles.length > 10) {
+      const filesToDelete = imageFiles.slice(10);
+      filesToDelete.forEach(file => {
+        try {
+          fs.unlinkSync(file.name);
+          console.log(`Cleaned up old image: ${file.name}`);
+        } catch (err) {
+          console.log(`Failed to delete ${file.name}:`, err.message);
+        }
+      });
+    }
+  } catch (error) {
+    console.log('Error during cleanup:', error.message);
+  }
+}
+
 async function addLogoAndLabels(imagePath, meal) {
   try {
+    // Clean up old images before creating new one
+    cleanupOldImages();
+    
     // Load the generated food image
     const baseImage = await loadImage(imagePath);
     
-    // Create canvas with same dimensions
+    // Create canvas with same dimensions and high quality settings
     const canvas = createCanvas(baseImage.width, baseImage.height);
     const ctx = canvas.getContext('2d');
+    
+    // Set high quality rendering options
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.textRenderingOptimization = 'optimizeQuality';
     
     // Draw the base food image
     ctx.drawImage(baseImage, 0, 0);
@@ -112,13 +188,33 @@ async function addLogoAndLabels(imagePath, meal) {
       // The AI prompt already instructs to leave this space clear for logo placement
     }
     
-    // Set up text styling for dish labels
-    ctx.font = 'bold 24px "Comic Sans MS", cursive'; // Using Comic Sans as fallback for Chloe-like style
+    // Set up text styling for dish labels with comprehensive font fallbacks
+    // Use registered font or comprehensive fallbacks for cross-platform compatibility
+    const fontStack = 'bold 32px BrandFont, Arial, "Helvetica Neue", Helvetica, "Liberation Sans", "DejaVu Sans", Verdana, Geneva, Tahoma, sans-serif';
+    ctx.font = fontStack;
+    
+    // Test font rendering to ensure it's working
+    const testMetrics = ctx.measureText('Test');
+    if (testMetrics.width === 0) {
+      // Fallback to a very basic font if measurement fails
+      ctx.font = 'bold 32px monospace';
+      console.log('Using monospace fallback font');
+    }
+    
     ctx.fillStyle = '#FDCF16'; // Yellow color matching brand
-    ctx.strokeStyle = '#000000'; // Black outline for contrast
-    ctx.lineWidth = 3;
+    // Remove borders/outlines for clean text
+    ctx.strokeStyle = 'transparent';
+    ctx.lineWidth = 0;
+    ctx.shadowColor = 'transparent';
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 0;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
+    
+    // Enable font smoothing for better quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     
     // Define text positions for dish labels - positioned below the logo
     const logoBottom = logoY + logoSize; // Logo Y position + logo size
@@ -139,18 +235,20 @@ async function addLogoAndLabels(imagePath, meal) {
       if (dish && textPositions[index]) {
         const pos = textPositions[index];
         
-        // Draw text stroke (outline)
-        ctx.strokeText(dish, pos.x, pos.y);
-        // Draw text fill
+        // Draw text without borders/outlines
         ctx.fillText(dish, pos.x, pos.y);
         
         console.log(`Added label "${dish}" at position ${pos.x}, ${pos.y}`);
       }
     });
     
-    // Save the final branded and labeled image
-    const finalImagePath = `${meal.Day.toLowerCase()}-meals.png`;
-    const buffer = canvas.toBuffer('image/png');
+    // Generate unique filename with timestamp and random string for cache busting
+    const timestamp = Date.now();
+    const randomId = crypto.randomBytes(8).toString('hex');
+    const finalImagePath = `${meal.Day.toLowerCase()}-meals-${timestamp}-${randomId}.png`;
+    
+    // Save with high quality PNG settings
+    const buffer = canvas.toBuffer('image/png', { compressionLevel: 3, filters: canvas.PNG_FILTER_NONE });
     fs.writeFileSync(finalImagePath, buffer);
     
     console.log(`Final branded and labeled image saved as ${finalImagePath}`);
@@ -323,12 +421,17 @@ app.post('/generate-image', async (req, res) => {
     
     const baseUrl = 'https://n8n-iw8n.onrender.com';
     
+    // Add cache-busting query parameter to ensure fresh images
+    const cacheBuster = Date.now();
+    
     res.json({
       message: 'Image generated successfully',
       imagePath: imagePath,
-      imageUrl: `${baseUrl}/images/${imagePath}`,
-      imageDisplayUrl: `${baseUrl}/images/${imagePath}`,
-      directLink: `${baseUrl}/images/${imagePath}`
+      imageUrl: `${baseUrl}/images/${imagePath}?v=${cacheBuster}`,
+      imageDisplayUrl: `${baseUrl}/images/${imagePath}?v=${cacheBuster}`,
+      directLink: `${baseUrl}/images/${imagePath}?v=${cacheBuster}`,
+      timestamp: new Date().toISOString(),
+      uniqueId: imagePath.split('-').slice(-2).join('-').replace('.png', '') // Extract timestamp-randomid part
     });
   } catch (error) {
     console.error('Error generating image:', error);
@@ -345,10 +448,12 @@ app.get('/images/:filename', (req, res) => {
   const filepath = `./${filename}`;
   
   if (fs.existsSync(filepath)) {
-    // Set proper headers for image display
+    // Set proper headers for image display with no cache to ensure fresh images
     res.set({
       'Content-Type': 'image/png',
-      'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+      'Cache-Control': 'no-cache, no-store, must-revalidate', // Force fresh images
+      'Pragma': 'no-cache',
+      'Expires': '0',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET',
       'Access-Control-Allow-Headers': 'Content-Type'
@@ -361,14 +466,27 @@ app.get('/images/:filename', (req, res) => {
 
 // List all generated images
 app.get('/images', (req, res) => {
-  const imageFiles = fs.readdirSync('.').filter(file => 
-    file.endsWith('-meals.png') || file.endsWith('-meals-image.png')
-  );
+  const imageFiles = fs.readdirSync('.')
+    .filter(file => file.match(/^\w+-meals-\d+-[a-f0-9]+\.png$/)) // Match our new naming pattern
+    .map(file => ({
+      filename: file,
+      time: fs.statSync(file).mtime,
+      size: fs.statSync(file).size
+    }))
+    .sort((a, b) => b.time - a.time); // Sort by newest first
+  
+  const baseUrl = req.get('host').includes('localhost') ? 
+    `http://localhost:${port}` : 
+    'https://n8n-iw8n.onrender.com';
+  
   res.json({
     images: imageFiles.map(file => ({
-      filename: file,
-      url: `http://localhost:${port}/images/${file}`
-    }))
+      filename: file.filename,
+      url: `${baseUrl}/images/${file.filename}`,
+      created: file.time,
+      size: file.size
+    })),
+    total: imageFiles.length
   });
 });
 

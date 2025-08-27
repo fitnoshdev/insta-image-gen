@@ -419,7 +419,7 @@ app.post('/generate-image', async (req, res) => {
     const mealData = req.body;
     const imagePath = await generateMealImage(mealData);
     
-    const baseUrl = 'https://n8n-iw8n.onrender.com';
+    const baseUrl = 'https://insta-image-gen.onrender.com';
     
     // Add cache-busting query parameter to ensure fresh images
     const cacheBuster = Date.now();
@@ -477,7 +477,7 @@ app.get('/images', (req, res) => {
   
   const baseUrl = req.get('host').includes('localhost') ? 
     `http://localhost:${port}` : 
-    'https://n8n-iw8n.onrender.com';
+    'https://insta-image-gen.onrender.com';
   
   res.json({
     images: imageFiles.map(file => ({
